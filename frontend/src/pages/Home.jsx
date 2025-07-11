@@ -31,34 +31,51 @@ function Home() {
     return bPoints - aPoints;
   });
 
-  return (
-    <div className="h-screen w-screen bg-gradient-to-br from-green-100 via-emerald-100 to-blue-100 flex items-center justify-center">
-      <div className="w-full h-full max-w-6xl bg-white/90 border border-emerald-300 rounded-none shadow-2xl">
-        <table className="w-full h-full table-fixed text-center border-collapse">
-          <thead className="bg-emerald-400 text-white text-sm h-[5%] uppercase tracking-wider">
-            <tr>
-              <th>Rank</th>
-              <th>ID</th>
-              <th>Name</th>
-              <th>Points</th>
-            </tr>
-          </thead>
-          <tbody className="text-emerald-900 text-sm font-medium">
-            {sorted.slice(0, 20).map((item, index) => {
-              const points = marks.find(c => c.candidateId === item.candidateId)?.points || 0;
-              const rankEmoji = ['🥇', '🥈', '🥉'][index] || index + 1;
+  const leftColumn = sorted.slice(0, 10);
+  const rightColumn = sorted.slice(10, 20);
 
-              return (
-                <tr key={item.candidateId} className="even:bg-emerald-50 h-[4.75%]">
-                  <td>{rankEmoji}</td>
-                  <td>{item.candidateId}</td>
-                  <td className="uppercase">{item.name}</td>
-                  <td className="text-red-600 font-bold">{points}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+  const renderTable = (data, offset) => (
+    <table className="w-full h-full table-fixed text-center border-collapse">
+      <thead className="bg-emerald-500 text-white text-sm uppercase tracking-wider h-[10%]">
+        <tr>
+          <th className="py-2">Rank</th>
+          <th className="py-2">ID</th>
+          <th className="py-2">Name</th>
+          <th className="py-2">Points</th>
+        </tr>
+      </thead>
+      <tbody className="text-emerald-900 text-sm font-medium">
+        {data.map((item, index) => {
+          const points = marks.find(c => c.candidateId === item.candidateId)?.points || 0;
+          const overallIndex = offset + index;
+          const rankEmoji = ['🥇', '🥈', '🥉'][overallIndex] || overallIndex + 1;
+
+          return (
+            <tr key={item.candidateId} className="even:bg-emerald-50 h-[9%]">
+              <td>{rankEmoji}</td>
+              <td>{item.candidateId}</td>
+              <td className="uppercase text-xl">{item.name}</td>
+              <td className="text-red-600 font-bold text-2xl">{points}</td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+
+  return (
+    <div className="h-screen w-screen bg-gradient-to-br from-green-100 via-emerald-100 to-blue-100 p-0 m-0">
+      <div className="flex w-full h-full">
+        <div className="w-1/2 h-full p-2">
+          <div className="w-full h-full bg-white/90 border border-emerald-300 rounded-none shadow-inner">
+            {renderTable(leftColumn, 0)}
+          </div>
+        </div>
+        <div className="w-1/2 h-full p-2">
+          <div className="w-full h-full bg-white/90 border border-emerald-300 rounded-none shadow-inner">
+            {renderTable(rightColumn, 10)}
+          </div>
+        </div>
       </div>
     </div>
   );

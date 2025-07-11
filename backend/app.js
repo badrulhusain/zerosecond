@@ -50,29 +50,29 @@ app.get('/points', async (req, res) => {
   }
 });
 
-// Socket.IO
 io.on('connection', (socket) => {
-  console.log("✅ Client connected");
+  console.log('Client connected');
 
-  Competitors.find().select("candidateId points").then(points => {
-    socket.emit('pointsUpdated', points);
-  });
-
-  socket.on('updatePoints', async (updated) => {
+  // Receive { candidateIds: [1, 2, 3], mark: 5 }
+  socket.on('bulkUpdatePoints', async ({ candidateIds, mark }) => {
     try {
-      for (const item of updated) {
-        await Competitors.updateOne(
-          { candidateId: item.candidateId },
-          { $set: { points: item.points } }
-        );
-      }
-      const allUpdated = await Competitors.find().select("candidateId points");
-      io.emit('pointsUpdated', allUpdated);
+      await Competitors.updateMany(
+        { candidateId: { $in: candidateIds } },
+        { $inc: { points: mark } } // Add mark to existing points
+      );
+
+      const updated = await Competitors.find().select("candidateId points");
+      io.emit('pointsUpdated', updated);
     } catch (err) {
-      console.error("Error updating points:", err);
+      console.error("Bulk update error:", err);
     }
   });
+
+  socket.on('disconnect', () => {
+    console.log('Client disconnected');
+  });
 });
+
   
 // DB & Server Start
 mongoose.connect(process.env.MONGO_URI, {

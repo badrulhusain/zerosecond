@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import socket from '../socket.js';
 import axios from 'axios';
+// ... same imports
 
 function AddPoints() {
   const [inputMark, setInputMark] = useState('');
@@ -21,12 +22,11 @@ function AddPoints() {
       .catch(err => console.error('❌ Failed to fetch candidates:', err))
       .finally(() => setLoading(false));
 
-    const handlePointsUpdated = (updated) => {
+    socket.on('pointsUpdated', (updated) => {
       setMarks(updated);
-    };
+    });
 
-    socket.on('pointsUpdated', handlePointsUpdated);
-    return () => socket.off('pointsUpdated', handlePointsUpdated);
+    return () => socket.off('pointsUpdated');
   }, []);
 
   const toggleCandidate = (id) => {
@@ -36,20 +36,18 @@ function AddPoints() {
   };
 
   const handleMarkUpdate = (type) => {
-    const value = parseInt(inputMark);
+    const value = parseFloat(inputMark);
     if (isNaN(value) || selectedIds.length === 0) {
       alert("❗ Please enter a valid mark and select candidates.");
       return;
     }
 
-    const updated = marks.map(c =>
-      selectedIds.includes(c.candidateId)
-        ? { ...c, points: type === 'add' ? c.points + value : c.points - value }
-        : c
-    );
+    const mark = type === 'add' ? value : -value;
 
-    setMarks(updated);
-    socket.emit('updatePoints', updated);
+    socket.emit('bulkUpdatePoints', {
+      candidateIds: selectedIds,
+      mark,
+    });
 
     setInputMark('');
     setSelectedIds([]);
@@ -57,43 +55,45 @@ function AddPoints() {
 
   return (
     <div className="flex flex-col items-center justify-center px-4 py-10 bg-gray-50 min-h-screen">
-      <div className="w-full max-w-xl space-y-4 bg-white p-6 rounded shadow">
-        <input
-          type="number"
-          value={inputMark}
-          onChange={(e) => setInputMark(e.target.value)}
-          placeholder="Enter mark"
-          className="w-full px-4 py-2 border rounded focus:outline-none"
-        />
+  <div className="w-full max-w-4xl space-y-6 bg-white p-10 rounded-2xl shadow-lg">
+    <input
+      type="text"
+      value={inputMark}
+      onChange={(e) => setInputMark(e.target.value)}
+      placeholder="Enter mark (e.g. 2.5, -1.75)"
+      className="w-full text-lg px-6 py-4 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400"
+    />
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-56 overflow-y-auto border rounded p-2">
-          {candidates.map(c => (
-            <label key={c.candidateId} className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                checked={selectedIds.includes(c.candidateId)}
-                onChange={() => toggleCandidate(c.candidateId)}
-              />
-              <span className="text-sm font-medium">#{c.candidateId} {c.name}</span>
-            </label>
-          ))}
-        </div>
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 max-h-[400px] overflow-y-auto border-2 rounded-xl p-4 bg-gray-50">
+      {candidates.map(c => (
+        <label key={c.candidateId} className="flex items-center space-x-2 text-base">
+          <input
+            type="checkbox"
+            checked={selectedIds.includes(c.candidateId)}
+            onChange={() => toggleCandidate(c.candidateId)}
+            className="w-5 h-5"
+          />
+          <span className="font-medium">#{c.candidateId} {c.name}</span>
+        </label>
+      ))}
+    </div>
 
-        <div className="flex gap-4">
-          <button
-            onClick={() => handleMarkUpdate('add')}
-            className="w-full bg-green-500 text-white py-2 rounded hover:bg-green-600 transition"
-          >
-            ➕ Add Mark
-          </button>
-          <button
-            onClick={() => handleMarkUpdate('minus')}
-            className="w-full bg-red-500 text-white py-2 rounded hover:bg-red-600 transition"
-          >
-            ➖ Minus Mark
-          </button>
-        </div>
-      </div>
+    <div className="flex flex-col sm:flex-row gap-4">
+      <button
+        onClick={() => handleMarkUpdate('add')}
+        className="w-full sm:w-1/2 bg-green-600 text-white text-lg py-3 rounded-xl hover:bg-green-700 transition"
+      >
+        ➕ Add Mark
+      </button>
+      <button
+        onClick={() => handleMarkUpdate('minus')}
+        className="w-full sm:w-1/2 bg-red-600 text-white text-lg py-3 rounded-xl hover:bg-red-700 transition"
+      >
+        ➖ Minus Mark
+      </button>
+    </div>
+  </div>
+
 
       {!loading && (
         <div className="mt-6 w-full max-w-xl">
@@ -104,7 +104,7 @@ function AddPoints() {
               .map(c => (
                 <li key={c.candidateId} className="p-2 flex justify-between">
                   <span>#{c.candidateId}</span>
-                  <span className="font-semibold text-red-600">{c.points} pts</span>
+                  <span className="font-semibold text-red-600">{c.points.toFixed(2)} pts</span>
                 </li>
               ))}
           </ul>
