@@ -52,8 +52,8 @@ function Home() {
 
           return (
             <tr key={item.candidateId} className="even:bg-emerald-50 h-[9%]">
-              <td>{rankEmoji}</td>
-              <td>{item.candidateId}</td>
+              <td className="uppercase text-xl">{rankEmoji}</td>
+              <td className="uppercase text-xl">{item.candidateId}</td>
               <td className="uppercase text-xl">{item.name}</td>
               <td className="text-red-600 font-bold text-2xl">{points}</td>
             </tr>

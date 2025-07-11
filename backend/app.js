@@ -53,18 +53,17 @@ app.get('/points', async (req, res) => {
 io.on('connection', (socket) => {
   console.log('Client connected');
 
-  // Receive { candidateIds: [1, 2, 3], mark: 5 }
   socket.on('bulkUpdatePoints', async ({ candidateIds, mark }) => {
     try {
       await Competitors.updateMany(
         { candidateId: { $in: candidateIds } },
-        { $inc: { points: mark } } // Add mark to existing points
+        { $inc: { points: mark } }
       );
 
-      const updated = await Competitors.find().select("candidateId points");
-      io.emit('pointsUpdated', updated);
+      const allUpdated = await Competitors.find().select("candidateId points");
+      io.emit('pointsUpdated', allUpdated);
     } catch (err) {
-      console.error("Bulk update error:", err);
+      console.error("Error updating points:", err);
     }
   });
 
@@ -72,6 +71,7 @@ io.on('connection', (socket) => {
     console.log('Client disconnected');
   });
 });
+
 
   
 // DB & Server Start
